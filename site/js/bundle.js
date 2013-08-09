@@ -21,6 +21,7 @@ $('.failCardButtons button').on('click', function(e){
 	$(this).addClass('active');
 })
 
+
 $('#recordMissionButton').click(function(e){
 
 	console.log("Record mission pressed.");
@@ -1606,21 +1607,45 @@ ViewUpdater.prototype.updateGameView = function( game ){
 	}
 	$('#missionTable').html(newHtml);
 
+
 	//Update possibilities:
-	// var newHtml = '';
-	// console.log("Considering the possibilities... "+game.possibilities.length);
-	// for(var i = 0, len = game.possibilities.length; i < len; i++){
-	// 	console.log("Possibility: "+JSON.stringify(game.possibilities[i]));
-	// 	if(game.possibilities.odds > 0){
-	// 		newHtml+='<tr>';
-	// 		for(var x = 0, length = game.possibilities[i].spies.length; x < length; x++){
-	// 			newHtml+='<td>'+game.possibilities[i].spies[x].name+'</td>';
-	// 		}	
-	// 		newHtml+='</tr>';
-	// 	}
-	// }
-	// console.log("Possibility table: "+newHtml);
-	$('#possibilityTable').html(game.generatePossibilityView());
+	var newHtml = '';
+	for(var i = 0, len = game.possibilities.length; i < len; i++){
+		if(game.possibilities.odds > 0){
+			newHtml+='<tr>';
+			for(var x = 0, length = game.possibilities[i].spies.length; x < length; x++){
+				newHtml+='<td>'+game.possibilities[i].spies[x].name+'</td>';
+			}	
+			newHtml+='</tr>';
+		}
+	}
+	$('#possibilityTable').html(newHtml);
+
+	//Update players:
+	var newHtml = '';
+	console.log("Going to display players: "+JSON.stringify(game.players));
+	for(var i = 0, len = game.players.length;  i < len; i++){
+		var missionCount = 0;
+		for(var x=0; x < game.missions.length; x++){
+			if(inArray(game.players[i].name, game.missions[x].players))
+				missionCount++;
+		}
+		console.log("Going to display player: "+JSON.stringify(game.players[i]));
+		var name = game.players[i].name;
+		newHtml+='<tr><td>'+name+'</td><td>'+missionCount;
+		newHtml+='</td><td>'+game.players[i].spyOdds+'</td><td>';
+		newHtml+='<input type="radio" name="leaderRadio" value="'+escape(name);
+		newHtml+='"></td><td><input type="checkbox" class="chosenCheckbox" player="'+escape(name)+'"></td></tr>';
+	}
+}
+
+function inArray(o, arr){
+	for (var i = 0, len = arr.length; i < len; i++){
+		if(o === arr[i]){
+			return true;
+		}
+	}
+	return false;
 }
 
 module.exports = function(){
