@@ -42,7 +42,7 @@ $('#recordMissionButton').click(function(e){
 	}
 
 	var missionNumber = game.missions.length;
-	var requiredForMission = game.rules.rounds[missionNumber];
+	var requiredForMission = Math.floor(game.rules.rounds[missionNumber]);
 	var rightPlayerNumber = (chosenPlayers.length === requiredForMission);
 	if(rightPlayerNumber && (failsPlayed < chosenPlayers.length)){
 
