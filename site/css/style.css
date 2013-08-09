@@ -1,0 +1,16 @@
+.hero-unit{
+  background:url('../img/eyes.jpg');
+  background-repeat: no-repeat;
+  background-size:100%;
+  color:gold;
+}
+.hero-unit a{
+  color:white;
+}
+.hero-unit a:hover{
+  text-decoration: none;
+  color:yellow;
+}
+.hero-unit h1{
+  font-family: 'Exo', sans-serif;
+}

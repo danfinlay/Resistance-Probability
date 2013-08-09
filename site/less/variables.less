@@ -10,12 +10,12 @@
 // Grays
 // -------------------------
 @black:                 #000;
-@grayDarker:            #222;
-@grayDark:              #333;
-@gray:                  #555;
-@grayLight:             #999;
-@grayLighter:           #eee;
-@white:                 #fff;
+@grayDarker:            darken(#424242, 10%);
+@grayDark:              #424242;
+@gray:                  #424242;
+@grayLight:             lighten(#424242, 10%);
+@grayLighter:           #E7E8D1;
+@white:                 #424242;
 
 
 // Accent colors
@@ -38,7 +38,7 @@
 
 // Links
 // -------------------------
-@linkColor:             #08c;
+@linkColor:             #424242;
 @linkColorHover:        darken(@linkColor, 15%);
 
 
@@ -80,7 +80,7 @@
 @tableBackground:                   transparent; // overall background-color
 @tableBackgroundAccent:             #f9f9f9; // for striping
 @tableBackgroundHover:              #f5f5f5; // for hover
-@tableBorder:                       #ddd; // table and cell border
+@tableBorder:                       @grayLighter; // table and cell border
 
 // Buttons
 // -------------------------
@@ -109,7 +109,7 @@
 
 // Forms
 // -------------------------
-@inputBackground:               @white;
+@inputBackground:               #fff;
 @inputBorder:                   #ccc;
 @inputBorderRadius:             @baseBorderRadius;
 @inputDisabledBackground:       @grayLighter;
@@ -181,14 +181,15 @@
 @navbarCollapseDesktopWidth:      @navbarCollapseWidth + 1;
 
 @navbarHeight:                    40px;
-@navbarBackgroundHighlight:       #ffffff;
+@navbarBackgroundHighlight:       #8E001C;
 @navbarBackground:                darken(@navbarBackgroundHighlight, 5%);
 @navbarBorder:                    darken(@navbarBackground, 12%);
 
-@navbarText:                      #777;
-@navbarLinkColor:                 #777;
-@navbarLinkColorHover:            @grayDark;
-@navbarLinkColorActive:           @gray;
+@navbarText:                      #FBF7E4;
+@navbarLinkColor:                 #FBF7E4;
+
+@navbarLinkColorHover:            @grayLighter;
+@navbarLinkColorActive:           @grayLighter;
 @navbarLinkBackgroundHover:       transparent;
 @navbarLinkBackgroundActive:      darken(@navbarBackground, 5%);
 

@@ -9,6 +9,7 @@ var _ = require('underscore');
 $('#newGameButton').click(function(e){
 	e.preventDefault();
 	gameStarted = false;
+	players = [];
 	view.renderNames(["None"]);
 });
 
