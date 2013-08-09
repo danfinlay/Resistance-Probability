@@ -46,7 +46,7 @@ $('#recordMissionButton').click(function(e){
 	var rightPlayerNumber = (chosenPlayers.length === requiredForMission);
 	if(rightPlayerNumber && (failsPlayed < chosenPlayers.length)){
 
-		var leader = unescape($('input:radio[name=leaderRadio]').val());
+		var leader = unescape($('input:radio[name=leaderRadio]:checked').val());
 
 		console.log("Leader Selected: "+JSON.stringify(chosenPlayers));
 
@@ -73,4 +73,8 @@ $('#recordMissionButton').click(function(e){
 
 $('#playerName').click(function(e){
 	$('#playerName').val('');
+})
+
+$('#trustHeading').tooltip({
+	html:"Degree you trust a player, between 0 and 1.  Default is 0.  Set yourself to 1."
 })

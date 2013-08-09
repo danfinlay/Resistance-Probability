@@ -47,7 +47,7 @@ $('#recordMissionButton').click(function(e){
 	var rightPlayerNumber = (chosenPlayers.length === requiredForMission);
 	if(rightPlayerNumber && (failsPlayed < chosenPlayers.length)){
 
-		var leader = unescape($('input:radio[name=leaderRadio]').val());
+		var leader = unescape($('input:radio[name=leaderRadio]:checked').val());
 
 		console.log("Leader Selected: "+JSON.stringify(chosenPlayers));
 
@@ -75,6 +75,10 @@ $('#recordMissionButton').click(function(e){
 $('#playerName').click(function(e){
 	$('#playerName').val('');
 })
+
+$('#trustHeading').tooltip({
+	html:"Degree you trust a player, between 0 and 1.  Default is 0.  Set yourself to 1."
+})
 },{"./lib/resistanceEstimator":2,"./lib/view":4,"underscore":5}],2:[function(require,module,exports){
 var players = [];
 var spyPermutations = require('./spyPermutations');
@@ -82,6 +86,7 @@ var _ = require('underscore');
 
 function Player(playerName){
 	this.name = playerName;
+	this.trust = 0;
 }
 
 function Game( players ){
@@ -360,7 +365,8 @@ ViewUpdater.prototype.renderNames = function(players){
 	players.forEach(function(player){
 		newHtml+= '<tr><td>'+player+'</td><td>0</td></td><td>N/A</td><td>';
 		newHtml+='<input type="radio" name="leaderRadio" value="'+escape(player);
-		newHtml+='"></td><td><input type="checkbox" class="chosenCheckbox" player="'+escape(player)+'"></td></tr>';
+		newHtml+='"></td><td><input type="checkbox" class="chosenCheckbox" player="'+escape(player)+'"></td>';
+		newHtml+='<td><input style="width:50px" value="0" player="'+player.trust+'"></td></tr>';
 	})
 	$('#playerTable').html(newHtml);
 }
@@ -370,7 +376,7 @@ ViewUpdater.prototype.updateGameView = function( game ){
 	//Update missions:
 	var newHtml = '';
 	for(var i = 0, len = game.missions.length; i < len; i++){
-		var color = game.missions[i].passed ? 'success' : 'danger';
+		var color = game.missions[i].passed ? 'success' : 'warning';
 		newHtml+='<tr class="'+color+'"><td>'+(i+1)+'</td><td>'+game.missions[i].leader+'</td><td>';
 		newHtml+=game.missions[i].players.join(', ')+'</td><td>';
 		newHtml+=game.missions[i].votesAgainst+'</td></tr>';
