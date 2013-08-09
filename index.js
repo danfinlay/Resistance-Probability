@@ -6,6 +6,12 @@ var players = [];
 var failsPlayed = 0;
 var _ = require('underscore');
 
+$('#newGameButton').click(function(e){
+	e.preventDefault();
+	gameStarted = false;
+	view.renderNames(["None"]);
+});
+
 $('#newPlayerButton').click(function(e){
 	var name = $('#playerName').val();
 	players.push(name);
@@ -36,8 +42,8 @@ $('#recordMissionButton').click(function(e){
 
 	var missionNumber = game.missions.length;
 	var requiredForMission = game.rules.rounds[missionNumber];
-	var rightPlayerNumber = chosenPlayers.length === requiredForMission;
-	if(rightPlayerNumber && failsPlayed =< len){
+	var rightPlayerNumber = (chosenPlayers.length === requiredForMission);
+	if(rightPlayerNumber && (failsPlayed < chosenPlayers.length)){
 
 		var leader = unescape($('input:radio[name=leaderRadio]').val());
 
@@ -47,7 +53,7 @@ $('#recordMissionButton').click(function(e){
 		view.updateGameView( game );
 	}else{
 		var missionNo = missionNumber + 1;
-		var failOverflow = failsPlayed > len;
+		var failOverflow = (failsPlayed > len);
 		var newHtml = '';
 
 		if(!rightPlayerNumber){
@@ -59,7 +65,7 @@ $('#recordMissionButton').click(function(e){
 		if(failOverflow){
 			newHtml+='You cannot have more fail cards than there are spies.  You may have mis-clicked.';
 		}
-		$('.modal-body').text();
+		$('.modal-body').text(newHtml);
 		$('#myModal').modal();
 	}
 });

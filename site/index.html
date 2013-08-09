@@ -47,6 +47,15 @@
 				</h1>
 			</div>
 			<div class="row-fluid">
+				<div class="span3">
+					<div id="newPlayerForm">
+						<fieldset>
+							 <legend>Add Players</legend> 
+							 <input type="text" placeholder="Enter player name here" id="playerName"> 
+							 <button id="newPlayerButton" class="btn">Add Player to Game</button>
+						</fieldset>
+					</div>
+				</div>
 				<div class="span9">
 					<h3>
 						Players
@@ -74,13 +83,13 @@
 						<tbody id="playerTable">
 							<tr>
 								<td>
-									Joe Schmoe
+									None
 								</td>
 								<td>
-									106
+									-
 								</td>
 								<td>
-									100%
+									-
 								</td>
 								<td>
 									<input type="radio" name="leaderRadio">
@@ -97,19 +106,12 @@
 							  <button type="button" class="btn btn-danger" val='1'>1</button>
 							  <button type="button" class="btn btn-danger" val = '2'>2</button>
 							  <button type="button" class="btn btn-danger" val = '3'>3</button>
+							  <button type="button" class="btn btn-danger" val = '4'>4</button>
 						</div> 
 					<button class="btn btn-warning" id="recordMissionButton">Record Mission</button>
 					</label>
 				</div>
-				<div class="span3">
-					<div id="newPlayerForm">
-						<fieldset>
-							 <legend>Add Player</legend> 
-							 <input type="text" placeholder="Enter player name here" id="playerName"> 
-							 <button id="newPlayerButton" class="btn">Add Player to Game</button>
-						</fieldset>
-					</div>
-				</div>
+				
 			</div>
 			<h3>
 				Missions To Date
@@ -132,33 +134,14 @@
 					</tr>
 				</thead>
 				<tbody id="missionTable">
-					<tr class="danger">
-						<td>
-							1
-						</td>
-						<td>
-							Joe Schmoe
-						</td>
-						<td>
-							Joe, Bob, Sue
-						</td>
-						<td>
-							3
-						</td>
-					</tr>
+					
 				</tbody>
 			</table>
 			<h3>
 				Possibilities Remaining
 			</h3>
 			<table class="table" id="possibilityTable">
-				<tbody>
-					<tr>
-						<td>Joe</td>
-						<td>Bob</td>
-						<td>Elise</td>
-					</tr>
-				</tbody>
+				
 			</table>
 		</div>
 	</div>
