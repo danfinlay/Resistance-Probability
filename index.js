@@ -1,5 +1,5 @@
-var gameEstimator = require('./resistanceEstimator');
-var view = require('./view')();
+var gameEstimator = require('./lib/resistanceEstimator');
+var view = require('./lib/view')();
 var game;
 var gameStarted = false;
 var players = [];
@@ -20,7 +20,6 @@ $('.failCardButtons button').on('click', function(e){
 	$(this).addClass('active');
 })
 
-
 $('#recordMissionButton').click(function(e){
 
 	console.log("Record mission pressed.");
@@ -37,15 +36,30 @@ $('#recordMissionButton').click(function(e){
 
 	var missionNumber = game.missions.length;
 	var requiredForMission = game.rules.rounds[missionNumber];
-	if(chosenPlayers.length === requiredForMission){
-		console.log("thesePlayers checked: "+JSON.stringify(chosenPlayers));
-		var leader = unescape($('.leaderRadio').val());
+	var rightPlayerNumber = chosenPlayers.length === requiredForMission;
+	if(rightPlayerNumber && failsPlayed =< len){
+
+		var leader = unescape($('input:radio[name=leaderRadio]').val());
+
+		console.log("Leader Selected: "+JSON.stringify(chosenPlayers));
 
 		game.missionComplete( leader, chosenPlayers, failsPlayed );
 		view.updateGameView( game );
 	}else{
 		var missionNo = missionNumber + 1;
-		$('.modal-body').text("With "+game.players.length+" players, there are "+requiredForMission+" players required to go on mission #"+missionNo+".");
+		var failOverflow = failsPlayed > len;
+		var newHtml = '';
+
+		if(!rightPlayerNumber){
+			newHtml+= "With "+game.players.length+" players, there are "+requiredForMission+" players required to go on mission #"+missionNo+".";
+		}
+		if(!rightPlayerNumber && failOverflow){
+			newHtml+='<br><em>Furthermore:</em><br>';
+		}
+		if(failOverflow){
+			newHtml+='You cannot have more fail cards than there are spies.  You may have mis-clicked.';
+		}
+		$('.modal-body').text();
 		$('#myModal').modal();
 	}
 });

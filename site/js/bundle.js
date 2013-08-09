@@ -21,7 +21,6 @@ $('.failCardButtons button').on('click', function(e){
 	$(this).addClass('active');
 })
 
-
 $('#recordMissionButton').click(function(e){
 
 	console.log("Record mission pressed.");
@@ -39,8 +38,10 @@ $('#recordMissionButton').click(function(e){
 	var missionNumber = game.missions.length;
 	var requiredForMission = game.rules.rounds[missionNumber];
 	if(chosenPlayers.length === requiredForMission){
-		console.log("thesePlayers checked: "+JSON.stringify(chosenPlayers));
-		var leader = unescape($('.leaderRadio').val());
+
+		var leader = unescape($('input:radio[name=leaderRadio]').val());
+
+		console.log("Leader Selected: "+JSON.stringify(chosenPlayers));
 
 		game.missionComplete( leader, chosenPlayers, failsPlayed );
 		view.updateGameView( game );
@@ -1313,7 +1314,7 @@ function Player(playerName){
 
 function Game( players ){
 
-	this.players = [];
+	this.players = players;
 	this.playerCount = this.players.length;
 
 	this.missions = [];
@@ -1323,10 +1324,7 @@ function Game( players ){
 	this.spyCount = spyCount;
 
 	for(var i = 0, len = players.length; i < len; i++){
-		this.players.push({
-			name: players[i],
-			spyOdds: spyCount / len
-		});
+		this.players[i].spyOdds = spyCount / len;
 	}
 
 	this.possibilities = spyPermutations.generate(players, this.spyCount);
@@ -1354,7 +1352,6 @@ Game.prototype.updateOdds = function(){
 					this.players[i].spyOdds += this.possibilities[y].odds;
 				}
 			}
-
 		}
 	}
 
@@ -1410,6 +1407,7 @@ function generateRules( numberOfPlayers ){
 Game.prototype.missionComplete = function( leader, chosenOnes, failCount ){
 	var mission = new Mission( leader, chosenOnes, failCount );
 	console.log("New mission made");
+
 	this.possibilities.forEach(function(possibility){
 		console.log("Is this possible: "+JSON.stringify(possibility))
 		if(!isPossible(possibility, mission, failCount)){
@@ -1439,7 +1437,7 @@ function isPossible( possibility, mission, failCount ){
 		}
 	})
 	console.log("Is the proposed "+inMissionCount+" spies less than "+failCount+"?");
-	if(!(inMissionCount >= failCount)){
+	if((inMissionCount >= failCount)){
 		console.log("Impossible!")
 	}else{
 		console.log("Possible.");
@@ -1607,21 +1605,23 @@ ViewUpdater.prototype.updateGameView = function( game ){
 	}
 	$('#missionTable').html(newHtml);
 
-
 	//Update possibilities:
-	var newHtml = '';
-	for(var i = 0, len = game.possibilities.length; i < len; i++){
-		if(game.possibilities.odds > 0){
-			newHtml+='<tr>';
-			for(var x = 0, length = game.possibilities[i].spies.length; x < length; x++){
-				newHtml+='<td>'+game.possibilities[i].spies[x].name+'</td>';
-			}	
-			newHtml+='</tr>';
-		}
-	}
-	$('#possibilityTable').html(newHtml);
+	// var newHtml = '';
+	// console.log("Considering the possibilities... "+game.possibilities.length);
+	// for(var i = 0, len = game.possibilities.length; i < len; i++){
+	// 	console.log("Possibility: "+JSON.stringify(game.possibilities[i]));
+	// 	if(game.possibilities.odds > 0){
+	// 		newHtml+='<tr>';
+	// 		for(var x = 0, length = game.possibilities[i].spies.length; x < length; x++){
+	// 			newHtml+='<td>'+game.possibilities[i].spies[x].name+'</td>';
+	// 		}	
+	// 		newHtml+='</tr>';
+	// 	}
+	// }
+	// console.log("Possibility table: "+newHtml);
+	$('#possibilityTable').html(game.generatePossibilityView());
 
-	//Update players:
+		//Update players:
 	var newHtml = '';
 	console.log("Going to display players: "+JSON.stringify(game.players));
 	for(var i = 0, len = game.players.length;  i < len; i++){
@@ -1637,6 +1637,8 @@ ViewUpdater.prototype.updateGameView = function( game ){
 		newHtml+='<input type="radio" name="leaderRadio" value="'+escape(name);
 		newHtml+='"></td><td><input type="checkbox" class="chosenCheckbox" player="'+escape(name)+'"></td></tr>';
 	}
+	$('#playerTable').html(newHtml);
+
 }
 
 function inArray(o, arr){
