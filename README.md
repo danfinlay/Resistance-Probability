@@ -6,7 +6,7 @@
 The javascript for this app is bundled using Browserify to allow node-style Requires and modular organization. To build, first make sure browserify is installed, which requires [Node.js](http://nodejs.org/) is installed. 
 
 Once Node.js is installed, run on your command line:
-```npm install browserify -g
+`npm install browserify -g`
 
 Navigate to this repo's directory, and enter:
-```browserify ./index.js -o ./site/js/bundle.js
+`browserify ./index.js -o ./site/js/bundle.js`
