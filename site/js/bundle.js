@@ -10,13 +10,22 @@ var _ = require('underscore');
 $('#newGameButton').click(function(e){
 	e.preventDefault();
 	gameStarted = false;
+	game = null;
 	players = [];
+	$('#newPlayerDiv').show(0);
+	$('#playerListDiv').removeClass('span12').addClass('span9');
 	view.renderNames(["None"]);
 });
 
 $('#newPlayerButton').click(function(e){
 	var name = $('#playerName').val();
-	players.push(name);
+	var newPlayer = {
+		name: name,
+		trust:false,
+		leader:false,
+		teamMember:false
+	};
+	players.push(newPlayer);
 	view.renderNames(players);
 	$('#playerName').val('');
 });
@@ -34,13 +43,20 @@ $('#recordMissionButton').click(function(e){
 	if(!gameStarted){
 		gameStarted = true;
 		game = gameEstimator(players);
+		$('#newPlayerDiv').hide(0);
+		$('#playerListDiv').removeClass('span9').addClass('span12');
 	}
 
 	var chosenPlayers = [];
 	playerEls = $('.chosenCheckbox:checked');
-	for(var i = 0, len = playerEls.length; i < len; i++){
-		chosenPlayers.push(unescape($(playerEls[i]).attr('player')));
+	for(var i = 0, len = players.length; i < len; i++){
+		players[i].trust = ($('.playerRow[player='+escape(players[i].name)+'] .trustBox:checked').length === 1);
+		if($('.playerRow[player='+players[i].name+'] .chosenCheckbox:checked').length > 0){
+			players[i].teamMember = true;
+			chosenPlayers.push(players[i]);
+		}
 	}
+	console.log("Chose players: "+chosenPlayers.length);
 
 	var missionNumber = game.missions.length;
 	var requiredForMission = Math.floor(game.rules.rounds[missionNumber]);
@@ -74,7 +90,23 @@ $('#recordMissionButton').click(function(e){
 
 $('#playerName').click(function(e){
 	$('#playerName').val('');
-})
+});
+
+$('input.trustBox').on('click', function(e){console.log("Test worked.")});
+
+$('input.trustBox').on('click', function(e){
+	var playerName = unescape($(this).attr('player'));
+	var selectedPlayer;
+	players.forEach(function(player){
+		if(player.name === playerName){
+			player.trust = !player.trust;
+			console.log("Player "+player.name+" is trusted now? "+player.trust);
+		}
+	});
+	if(game){
+		//game.updateGameView();
+	}
+});
 
 $('#trustHeading').tooltip({
 	html:"Degree you trust a player, between 0 and 1.  Default is 0.  Set yourself to 1."
@@ -83,6 +115,11 @@ $('#trustHeading').tooltip({
 var players = [];
 var spyPermutations = require('./spyPermutations');
 var _ = require('underscore');
+
+module.exports = function newGame (players){
+	var game = new Game(players);
+	return game;
+}
 
 function Player(playerName){
 	this.name = playerName;
@@ -120,11 +157,15 @@ Game.prototype.updateOdds = function(){
 
 	//Add 1 to each player's spy odds for each scenerio in which they are a spy:
 	for(var y = 0; y < this.possibilities.length; y++){
-		possibilityCounter += this.possibilities[y].odds;
 
+		this.possibilities[y].odds = 1;
+		if(!isPossible(this.possibilities[y])){
+			possibilityCounter += this.possibilities[y].odds;
+			this.possibilities[y].odds = 0;
+		}
 		for( var x = 0, length = this.possibilities[y].spies.length; x < length; x++){
 			//Find that spy in the main array to update them b/c silly JS pass by reference is shallow.
-			for(var i = 0, len = this.players.length; i < len; i++){
+			for(var i = 0, len = this.playerCount; i < len; i++){
 				if(this.players[i].name === this.possibilities[y].spies[x].name){
 					this.players[i].spyOdds += this.possibilities[y].odds;
 				}
@@ -140,10 +181,11 @@ Game.prototype.updateOdds = function(){
 	return this.players;
 }
 
-function Mission ( leader, selectedPlayers, failCount ){
+function Mission ( leader, selectedPlayers, failCount, maxFails ){
 	this.leader = leader;
 	this.players = selectedPlayers.slice(0);
-	this.passed = failCount === 0;
+	this.failCount = failCount;
+	this.passed = (failCount < maxFails);
 	this.votesAgainst = failCount;
 }
 
@@ -182,44 +224,49 @@ function generateRules( numberOfPlayers ){
 }
 
 Game.prototype.missionComplete = function( leader, chosenOnes, failCount ){
-	var mission = new Mission( leader, chosenOnes, failCount );
+	var maxFails = this.rules.rounds[this.playerCount][this.missions.length+1] % 1 === 0 ? 1 : 2;
+	var mission = new Mission( leader, chosenOnes, failCount, maxFails );
 	console.log("New mission made");
 
-	this.possibilities.forEach(function(possibility){
-		console.log("Is this possible: "+JSON.stringify(possibility))
-		if(!isPossible(possibility, mission, failCount)){
-			possibility.odds = 0;
-		}
-	})	
-
-	this.updateOdds();
+	this.updateOdds(mission);
 	
 	console.log("About to push the mission...");
 	this.missions.push( mission );
 };
 
-function isPossible( possibility, mission, failCount ){
-	var inMissionCount = 0;
-	var notInMissionCount = 0;
-	// console.log("Is possible? "+JSON.stringify(possibility));
-	possibility.spies.forEach(function(spy){
-		//console.log("For thsi spiy...");
-		console.log("Checking if "+spy.name+" is in "+JSON.stringify(mission.players));
-		if(inArray(spy.name, mission.players)){
-			//console.log("Mission count plus!");
-			inMissionCount++;
+function isPossible( possibility ){
+	this.missions.forEach(function(mission){
+		var inMissionCount = 0;
+		var notInMissionCount = 0;
+		// console.log("Is possible? "+JSON.stringify(possibility));
+		possibility.spies.forEach(function(spy){
+			//console.log("For thsi spiy...");
+			console.log("Checking if "+spy.name+" is in "+JSON.stringify(mission.players));
+			if(inArray(spy.name, mission.players)){
+				//console.log("Mission count plus!");
+				inMissionCount++;
+			}else{
+				//console.log("Mission count minus!");
+				notInMissionCount++;
+			}
+		})
+
+		var trustedPlayerPresent = false;
+		possibility.spies.forEach(function(possibleSpy){
+			if(possibleSpy.trust){
+				trustedPlayerPresent = true;
+			}
+		});
+
+		console.log("Is the proposed "+inMissionCount+" spies less than "+failCount+"?");
+		if((inMissionCount >= failCount) && !trustedPlayerPresent){
+			console.log("Impossible!")
+			return false;
 		}else{
-			//console.log("Mission count minus!");
-			notInMissionCount++;
+			console.log("Possible.");
+			return true;
 		}
-	})
-	console.log("Is the proposed "+inMissionCount+" spies less than "+failCount+"?");
-	if((inMissionCount >= failCount)){
-		console.log("Impossible!")
-	}else{
-		console.log("Possible.");
-	}
-	return inMissionCount >= failCount;
+	});
 }
 
 function inArray(o, arr){
@@ -245,16 +292,6 @@ Game.prototype.generatePossibilityView = function(){
 		}
 	}
 	return newHtml;
-}
-
-module.exports = function newGame (playerNameArray){
-	var players = [];
-	playerNameArray.forEach(function(name){
-		var player = new Player(name);
-		players.push(player);
-	})
-	var game = new Game(players);
-	return game;
 }
 },{"./spyPermutations":3,"underscore":5}],3:[function(require,module,exports){
 var generate = function generate(playerList, spyCount){
@@ -355,6 +392,8 @@ function inArray(arr, b){
     return false;
 }
 },{}],4:[function(require,module,exports){
+var _ = require('underscore');
+
 function ViewUpdater (game){
 	this.game = game;
 	return this;
@@ -363,10 +402,10 @@ function ViewUpdater (game){
 ViewUpdater.prototype.renderNames = function(players){
 	var newHtml = '';
 	players.forEach(function(player){
-		newHtml+= '<tr><td>'+player+'</td><td>0</td></td><td>N/A</td><td>';
-		newHtml+='<input type="radio" name="leaderRadio" value="'+escape(player);
-		newHtml+='"></td><td><input type="checkbox" class="chosenCheckbox" player="'+escape(player)+'"></td>';
-		newHtml+='<td><input style="width:50px" value="0" player="'+player.trust+'"></td></tr>';
+		newHtml+= '<tr class="playerRow" player = "'+escape(player.name)+'"><td>'+player.name+'</td><td>0</td><td>N/A</td><td>';
+		newHtml+='<input type="radio" name="leaderRadio" value="'+escape(player.name);
+		newHtml+='"></td><td><input type="checkbox" class="chosenCheckbox" player="'+escape(player.name)+'"></td>';
+		newHtml+='<td><input type="checkbox" class="trustBox" player="'+escape(player.name)+'"></td></tr>';
 	})
 	$('#playerTable').html(newHtml);
 }
@@ -378,28 +417,15 @@ ViewUpdater.prototype.updateGameView = function( game ){
 	for(var i = 0, len = game.missions.length; i < len; i++){
 		var color = game.missions[i].passed ? 'success' : 'warning';
 		newHtml+='<tr class="'+color+'"><td>'+(i+1)+'</td><td>'+game.missions[i].leader+'</td><td>';
-		newHtml+=game.missions[i].players.join(', ')+'</td><td>';
+		newHtml+= _.map(game.missions[i].players, function(a){return a.name;}).join(', ')+'</td><td>';
 		newHtml+=game.missions[i].votesAgainst+'</td></tr>';
 	}
 	$('#missionTable').html(newHtml);
 
 	//Update possibilities:
-	// var newHtml = '';
-	// console.log("Considering the possibilities... "+game.possibilities.length);
-	// for(var i = 0, len = game.possibilities.length; i < len; i++){
-	// 	console.log("Possibility: "+JSON.stringify(game.possibilities[i]));
-	// 	if(game.possibilities.odds > 0){
-	// 		newHtml+='<tr>';
-	// 		for(var x = 0, length = game.possibilities[i].spies.length; x < length; x++){
-	// 			newHtml+='<td>'+game.possibilities[i].spies[x].name+'</td>';
-	// 		}	
-	// 		newHtml+='</tr>';
-	// 	}
-	// }
-	// console.log("Possibility table: "+newHtml);
 	$('#possibilityTable').html(game.generatePossibilityView());
 
-		//Update players:
+	//Update players:
 	var newHtml = '';
 	console.log("Going to display players: "+JSON.stringify(game.players));
 	for(var i = 0, len = game.players.length;  i < len; i++){
@@ -413,7 +439,13 @@ ViewUpdater.prototype.updateGameView = function( game ){
 		newHtml+='<tr><td>'+name+'</td><td>'+missionCount;
 		newHtml+='</td><td>'+game.players[i].spyOdds+'</td><td>';
 		newHtml+='<input type="radio" name="leaderRadio" value="'+escape(name);
-		newHtml+='"></td><td><input type="checkbox" class="chosenCheckbox" player="'+escape(name)+'"></td></tr>';
+		newHtml+='"></td><td><input type="checkbox" class="chosenCheckbox" player="'+escape(name)+'"></td>';
+
+		//Trust checkbox:
+		newHtml+='<td><input type="checkbox"';
+		newHtml+= game.players[i].trust ? ' checked ' : ' ';
+		newHtml+= 'class="trustBox" player="'+escape(name)+'"></td></tr>';
+
 	}
 	$('#playerTable').html(newHtml);
 
@@ -431,7 +463,7 @@ function inArray(o, arr){
 module.exports = function(){
 	return new ViewUpdater();
 }
-},{}],5:[function(require,module,exports){
+},{"underscore":5}],5:[function(require,module,exports){
 //     Underscore.js 1.5.1
 //     http://underscorejs.org
 //     (c) 2009-2013 Jeremy Ashkenas, DocumentCloud and Investigative Reporters & Editors

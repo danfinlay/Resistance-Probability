@@ -9,13 +9,22 @@ var _ = require('underscore');
 $('#newGameButton').click(function(e){
 	e.preventDefault();
 	gameStarted = false;
+	game = null;
 	players = [];
+	$('#newPlayerDiv').show(0);
+	$('#playerListDiv').removeClass('span12').addClass('span9');
 	view.renderNames(["None"]);
 });
 
 $('#newPlayerButton').click(function(e){
 	var name = $('#playerName').val();
-	players.push(name);
+	var newPlayer = {
+		name: name,
+		trust:false,
+		leader:false,
+		teamMember:false
+	};
+	players.push(newPlayer);
 	view.renderNames(players);
 	$('#playerName').val('');
 });
@@ -33,13 +42,20 @@ $('#recordMissionButton').click(function(e){
 	if(!gameStarted){
 		gameStarted = true;
 		game = gameEstimator(players);
+		$('#newPlayerDiv').hide(0);
+		$('#playerListDiv').removeClass('span9').addClass('span12');
 	}
 
 	var chosenPlayers = [];
 	playerEls = $('.chosenCheckbox:checked');
-	for(var i = 0, len = playerEls.length; i < len; i++){
-		chosenPlayers.push(unescape($(playerEls[i]).attr('player')));
+	for(var i = 0, len = players.length; i < len; i++){
+		players[i].trust = ($('.playerRow[player='+escape(players[i].name)+'] .trustBox:checked').length === 1);
+		if($('.playerRow[player='+players[i].name+'] .chosenCheckbox:checked').length > 0){
+			players[i].teamMember = true;
+			chosenPlayers.push(players[i]);
+		}
 	}
+	console.log("Chose players: "+chosenPlayers.length);
 
 	var missionNumber = game.missions.length;
 	var requiredForMission = Math.floor(game.rules.rounds[missionNumber]);
@@ -73,7 +89,23 @@ $('#recordMissionButton').click(function(e){
 
 $('#playerName').click(function(e){
 	$('#playerName').val('');
-})
+});
+
+$('input.trustBox').on('click', function(e){console.log("Test worked.")});
+
+$('input.trustBox').on('click', function(e){
+	var playerName = unescape($(this).attr('player'));
+	var selectedPlayer;
+	players.forEach(function(player){
+		if(player.name === playerName){
+			player.trust = !player.trust;
+			console.log("Player "+player.name+" is trusted now? "+player.trust);
+		}
+	});
+	if(game){
+		//game.updateGameView();
+	}
+});
 
 $('#trustHeading').tooltip({
 	html:"Degree you trust a player, between 0 and 1.  Default is 0.  Set yourself to 1."
