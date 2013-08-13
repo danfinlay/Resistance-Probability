@@ -38,6 +38,9 @@ $('.failCardButtons button').on('click', function(e){
 
 $('#recordMissionButton').click(function(e){
 
+	e.preventDefault();
+	if(players.length < 5) return;
+
 	console.log("Record mission pressed.");
 	if(!gameStarted){
 		gameStarted = true;
@@ -94,6 +97,7 @@ $('#recordMissionButton').click(function(e){
 		}
 		$('.modal-body').text(newHtml);
 		$('#myModal').modal();
+		$('div.failCardButtons[val="'+failsPlayed+'"]').addClass('active');
 	}
 });
 
