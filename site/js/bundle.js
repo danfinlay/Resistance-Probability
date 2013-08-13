@@ -122,6 +122,15 @@ $('#playerName').click(function(e){
 // 	}
 // });
 
+$('#undoMissionButton').click(function(e){
+	e.preventDefault();
+	if(game && game.missions.length > 0){
+		game.missions.pop(game.missions.length-1);
+		game.updateOdds();
+		game.updateGameView();
+	}
+})
+
 $('#trustHeading').tooltip({
 	html:"Degree you trust a player, between 0 and 1.  Default is 0.  Set yourself to 1."
 })
