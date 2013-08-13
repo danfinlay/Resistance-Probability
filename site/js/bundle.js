@@ -63,7 +63,14 @@ $('#recordMissionButton').click(function(e){
 	var missionNumber = game.missions.length;
 	var requiredForMission = Math.floor(game.rules.rounds[missionNumber]);
 	var rightPlayerNumber = (chosenPlayers.length === requiredForMission);
-	if(rightPlayerNumber && (failsPlayed < chosenPlayers.length)){
+	console.log("Right player number: "+rightPlayerNumber);
+	var maxFails = game.rules.rounds[game.missions.length];
+	console.log("Max fails: "+maxFails);
+	failsPlayed = parseInt($('div.failCardButtons .active').attr('val'));
+	console.log("Fails played: "+failsPlayed);
+
+
+	if(rightPlayerNumber && (failsPlayed <= chosenPlayers.length)){
 
 		var leader = unescape($('input:radio[name=leaderRadio]:checked').val());
 
@@ -72,9 +79,9 @@ $('#recordMissionButton').click(function(e){
 		game.missionComplete( leader, chosenPlayers, failsPlayed );
 		view.updateGameView( game );
 	}else{
-		var len = game.rules.rounds[missionNumber];
+		console.log("maxfails, fails: "+maxFails+" "+failsPlayed);
 		var missionNo = missionNumber + 1;
-		var failOverflow = (failsPlayed > len);
+		var failOverflow = (failsPlayed > maxFails);
 		var newHtml = '';
 
 		if(!rightPlayerNumber){

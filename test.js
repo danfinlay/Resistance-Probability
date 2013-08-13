@@ -44,7 +44,6 @@ describe('resistance estimator', function(){
     expect(rules).to.be.ok();
     expect(rules).to.be.an('object');
     // expect(rules.rounds).to.be.an('array');
-   
 
   });
 
@@ -58,6 +57,19 @@ describe('resistance estimator', function(){
   })
 
 });
+
+// describe('Awful spies', function(){
+
+//   var game = gameEstimator(samplePlayers);
+
+//   game.missionComplete("Dan", sampleTeam, 2);
+//   var rules = game.rules;
+
+//   it('should complete the mission anyway', function(){
+//     expect(game.missions.length).to.be(1);
+//   });
+
+// });
 
 describe('front end', function(){
   it('should handle normal visitor behavior for a 5 person game', function(done){
