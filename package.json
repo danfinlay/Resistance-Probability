@@ -25,5 +25,15 @@
     "expect.js": "~0.2.0",
     "phantomjs": "~1.9.1-0",
     "zombie": "~2.0.0-alpha19"
+  },
+  "testling": {
+    "files": "test.js",
+    "browsers": {
+      "ie": [ 8, 9 ],
+      "firefox": [ 13 ],
+      "chrome": [ 20 ],
+      "safari": [ 5.1 ],
+      "opera": [ 12 ]
+    }
   }
 }

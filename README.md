@@ -3,6 +3,8 @@
 
 [Live application running here](http://danfinlay.com/projects/resistance/probability/)
 
+[![browser support](https://ci.testling.com/USER/PROJECT.png)](https://ci.testling.com/USER/PROJECT)
+
 The javascript for this app is bundled using Browserify to allow node-style Requires and modular organization. To build, first make sure browserify is installed, which requires [Node.js](http://nodejs.org/) is installed. 
 
 Once Node.js is installed, run on your command line:
