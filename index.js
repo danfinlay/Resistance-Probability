@@ -48,10 +48,12 @@ $('#recordMissionButton').click(function(e){
 
 	var chosenPlayers = [];
 	playerEls = $('.chosenCheckbox:checked');
-	for(var i = 0, len = players.length; i < len; i++){
-		players[i].trust = ($('.playerRow[player='+escape(players[i].name)+'] .trustBox:checked').length === 1);
-		if($('.playerRow[player='+players[i].name+'] .chosenCheckbox:checked').length > 0){
-			players[i].teamMember = true;
+	// console.log("Chose players1: "+playerEls.length);
+
+	for(var i = 0, len = game.players.length; i < len; i++){
+		game.players[i].trust = ($('.trustBox[player='+escape(game.players[i].name)+']:checked').length === 1);
+		if($('.chosenCheckbox[player="'+game.players[i].name+'"]:checked').length > 0){
+			game.players[i].teamMember = true;
 			chosenPlayers.push(players[i]);
 		}
 	}
@@ -91,21 +93,21 @@ $('#playerName').click(function(e){
 	$('#playerName').val('');
 });
 
-$('input.trustBox').on('click', function(e){console.log("Test worked.")});
+// $('input.trustBox').on('click', function(e){console.log("Test worked.")});
 
-$('input.trustBox').on('click', function(e){
-	var playerName = unescape($(this).attr('player'));
-	var selectedPlayer;
-	players.forEach(function(player){
-		if(player.name === playerName){
-			player.trust = !player.trust;
-			console.log("Player "+player.name+" is trusted now? "+player.trust);
-		}
-	});
-	if(game){
-		//game.updateGameView();
-	}
-});
+// $('input.trustBox').on('click', function(e){
+// 	var playerName = unescape($(this).attr('player'));
+// 	var selectedPlayer;
+// 	players.forEach(function(player){
+// 		if(player.name === playerName){
+// 			player.trust = !player.trust;
+// 			console.log("Player "+player.name+" is trusted now? "+player.trust);
+// 		}
+// 	});
+// 	if(game){
+// 		//game.updateGameView();
+// 	}
+// });
 
 $('#trustHeading').tooltip({
 	html:"Degree you trust a player, between 0 and 1.  Default is 0.  Set yourself to 1."

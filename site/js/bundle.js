@@ -49,10 +49,12 @@ $('#recordMissionButton').click(function(e){
 
 	var chosenPlayers = [];
 	playerEls = $('.chosenCheckbox:checked');
-	for(var i = 0, len = players.length; i < len; i++){
-		players[i].trust = ($('.playerRow[player='+escape(players[i].name)+'] .trustBox:checked').length === 1);
-		if($('.playerRow[player='+players[i].name+'] .chosenCheckbox:checked').length > 0){
-			players[i].teamMember = true;
+	// console.log("Chose players1: "+playerEls.length);
+
+	for(var i = 0, len = game.players.length; i < len; i++){
+		game.players[i].trust = ($('.trustBox[player='+escape(game.players[i].name)+']:checked').length === 1);
+		if($('.chosenCheckbox[player="'+game.players[i].name+'"]:checked').length > 0){
+			game.players[i].teamMember = true;
 			chosenPlayers.push(players[i]);
 		}
 	}
@@ -92,21 +94,21 @@ $('#playerName').click(function(e){
 	$('#playerName').val('');
 });
 
-$('input.trustBox').on('click', function(e){console.log("Test worked.")});
+// $('input.trustBox').on('click', function(e){console.log("Test worked.")});
 
-$('input.trustBox').on('click', function(e){
-	var playerName = unescape($(this).attr('player'));
-	var selectedPlayer;
-	players.forEach(function(player){
-		if(player.name === playerName){
-			player.trust = !player.trust;
-			console.log("Player "+player.name+" is trusted now? "+player.trust);
-		}
-	});
-	if(game){
-		//game.updateGameView();
-	}
-});
+// $('input.trustBox').on('click', function(e){
+// 	var playerName = unescape($(this).attr('player'));
+// 	var selectedPlayer;
+// 	players.forEach(function(player){
+// 		if(player.name === playerName){
+// 			player.trust = !player.trust;
+// 			console.log("Player "+player.name+" is trusted now? "+player.trust);
+// 		}
+// 	});
+// 	if(game){
+// 		//game.updateGameView();
+// 	}
+// });
 
 $('#trustHeading').tooltip({
 	html:"Degree you trust a player, between 0 and 1.  Default is 0.  Set yourself to 1."
@@ -128,11 +130,14 @@ function Player(playerName){
 
 function Game( players ){
 
+	console.log("Making a new game with "+players.length);
 	this.players = players;
 	this.playerCount = this.players.length;
 
 	this.missions = [];
+	this.generateRules = generateRules;
 	this.rules = generateRules( players.length );
+	// console.log("Rules generated: "+JSON.stringify(this.rules));
 
 	var spyCount = this.rules.spies;
 	this.spyCount = spyCount;
@@ -142,43 +147,47 @@ function Game( players ){
 	}
 
 	this.possibilities = spyPermutations.generate(players, this.spyCount);
-	console.log("New game has "+this.possibilities.length+" possibilities.");
+	// console.log("New game has "+this.possibilities.length+" possibilities.");
 
 }
 
+
 Game.prototype.updateOdds = function(){
 
-	//Reset player odds
-	this.players.forEach(function(player){
-		player.spyOdds = 0;
+	var possibleOutcomes = 0;
+	var game = this;
+	this.possibilities.forEach(function(possibility){
+		if(game.isPossible(possibility)){
+			// console.log("Possible: "+JSON.stringify(possibility));
+			possibleOutcomes++;
+			possibility.odds = 1;
+		}else{
+			// console.log("Impossible: "+JSON.stringify(possibility));
+			possibility.odds = 0;
+		}
 	});
 
-	var possibilityCounter = 0;
+	this.updatePlayerOdds(possibleOutcomes);
+	// console.log("Updated odds to: "+JSON.stringify(this.possibilities));
+	console.log("Players set to: "+JSON.stringify(this.players));
 
-	//Add 1 to each player's spy odds for each scenerio in which they are a spy:
-	for(var y = 0; y < this.possibilities.length; y++){
+}
 
-		this.possibilities[y].odds = 1;
-		if(!isPossible(this.possibilities[y])){
-			possibilityCounter += this.possibilities[y].odds;
-			this.possibilities[y].odds = 0;
-		}
-		for( var x = 0, length = this.possibilities[y].spies.length; x < length; x++){
-			//Find that spy in the main array to update them b/c silly JS pass by reference is shallow.
-			for(var i = 0, len = this.playerCount; i < len; i++){
-				if(this.players[i].name === this.possibilities[y].spies[x].name){
-					this.players[i].spyOdds += this.possibilities[y].odds;
-				}
-			}
-		}
-	}
-
-	//Normalize odds:
+Game.prototype.updatePlayerOdds = function(possibleOutcomes){
+	var game = this;
 	this.players.forEach(function(player){
-		player.spyOdds /= possibilityCounter;
-	})
+		player.spyOdds = 0;
+		game.possibilities.forEach(function(possibility){
+			if(_.contains( possibility.spies, player )){
+				// console.log("Adding odds: "+possibility.odds);
+				player.spyOdds += possibility.odds;
+			}else{
+				// console.log("No odds added");
+			}
+		});
+		player.spyOdds /= possibleOutcomes;
+	});
 
-	return this.players;
 }
 
 function Mission ( leader, selectedPlayers, failCount, maxFails ){
@@ -187,15 +196,6 @@ function Mission ( leader, selectedPlayers, failCount, maxFails ){
 	this.failCount = failCount;
 	this.passed = (failCount < maxFails);
 	this.votesAgainst = failCount;
-}
-
-Mission.prototype.wasIn = function( playerName ){
-	this.players.forEach( function( player ){
-		if( player.name === playerName ){
-			return true;
-		}
-	})
-	return false;
 }
 
 function generateRules( numberOfPlayers ){
@@ -224,49 +224,67 @@ function generateRules( numberOfPlayers ){
 }
 
 Game.prototype.missionComplete = function( leader, chosenOnes, failCount ){
-	var maxFails = this.rules.rounds[this.playerCount][this.missions.length+1] % 1 === 0 ? 1 : 2;
+	var maxFails = this.rules.rounds[this.missions.length] % 1 === 0 ? 1 : 2;
 	var mission = new Mission( leader, chosenOnes, failCount, maxFails );
 	console.log("New mission made");
 
+	this.missions.push( mission );
 	this.updateOdds(mission);
 	
 	console.log("About to push the mission...");
-	this.missions.push( mission );
 };
 
-function isPossible( possibility ){
-	this.missions.forEach(function(mission){
-		var inMissionCount = 0;
-		var notInMissionCount = 0;
-		// console.log("Is possible? "+JSON.stringify(possibility));
-		possibility.spies.forEach(function(spy){
-			//console.log("For thsi spiy...");
-			console.log("Checking if "+spy.name+" is in "+JSON.stringify(mission.players));
-			if(inArray(spy.name, mission.players)){
-				//console.log("Mission count plus!");
-				inMissionCount++;
-			}else{
-				//console.log("Mission count minus!");
-				notInMissionCount++;
-			}
-		})
+Game.prototype.isPossible = function( possibility ){
+	console.log("Is possible?");
+	var game = this;
 
-		var trustedPlayerPresent = false;
-		possibility.spies.forEach(function(possibleSpy){
-			if(possibleSpy.trust){
-				trustedPlayerPresent = true;
+	if( this.containsTrustedSpy( possibility ) ){
+		console.log("Trusted player detected.");
+		return false;
+	}
+
+	for(var m = 0, mLen = this.missions.length; m < mLen; m++){
+		var mission = this.missions[m];
+
+		//Test if more fails were thrown than this possibility proposes were on this mission:
+		var spiesInMission = 0;
+		var missionPlayerNames = _.map(mission.players, function(a){return a.name;});
+
+		possibility.spies.forEach(function(spy){
+			if(inArray(spy.name, missionPlayerNames)){
+				spiesInMission++;
 			}
 		});
 
-		console.log("Is the proposed "+inMissionCount+" spies less than "+failCount+"?");
-		if((inMissionCount >= failCount) && !trustedPlayerPresent){
-			console.log("Impossible!")
+		console.log("Is the proposed "+spiesInMission+" spies less than "+mission.failCount+"?");
+		if(spiesInMission < mission.failCount){
 			return false;
-		}else{
-			console.log("Possible.");
+		}
+	}
+	return true;
+}
+
+Game.prototype.containsTrustedSpy = function( possibility ){
+
+	var game = this;
+	var trustedPlayers = this.trustedPlayerArray();
+
+	for(var t=0, tLen = trustedPlayers.length; t < tLen; t++){
+		if(_.contains(possibility.spies, trustedPlayers[t])){
 			return true;
 		}
+	}
+	return false;
+}
+
+Game.prototype.trustedPlayerArray = function(){
+	var trustedPlayers = [];
+	this.players.forEach(function(player){
+		if(player.trust){
+			trustedPlayers.push(player);
+		}
 	});
+	return trustedPlayers;
 }
 
 function inArray(o, arr){
@@ -295,11 +313,11 @@ Game.prototype.generatePossibilityView = function(){
 }
 },{"./spyPermutations":3,"underscore":5}],3:[function(require,module,exports){
 var generate = function generate(playerList, spyCount){
-    console.log("Received "+JSON.stringify(playerList)+" and "+spyCount);
+    // console.log("Received "+JSON.stringify(playerList)+" and "+spyCount);
     var raw = exports.permuteRaw(playerList, spyCount);
-    console.log("Raw list is: "+JSON.stringify(raw));
+    // console.log("Raw list is: "+JSON.stringify(raw));
     var reduced = reduceList(raw, spyCount);
-    console.log("Reduced is: "+JSON.stringify(reduced));
+    // console.log("Reduced is: "+JSON.stringify(reduced));
     return reduced;
 }
 exports.generate = generate;
@@ -325,12 +343,14 @@ exports.reduceList = reduceList;
 
 var permuteRaw = function permuteRaw(playerList, spyCount){
     var allArrangements = permute(playerList);
+    // console.log("All arrangements: "+JSON.stringify(allArrangements))
     var realArrangements = [];
     allArrangements.forEach(function(arrangement){
         if(!duplicates(arrangement, realArrangements, spyCount)){
             realArrangements.push(arrangement);
         }
     })
+    // console.log("\nReal arrangements: "+JSON.stringify(realArrangements))
     return realArrangements;
 }
 exports.permuteRaw = permuteRaw;

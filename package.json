@@ -18,9 +18,12 @@
   "author": "Dan Finlay",
   "license": "BSD",
   "dependencies": {
+    "underscore": "~1.5.1"
+  },
+  "devDependencies": {
     "mocha": "~1.12.0",
-    "underscore": "~1.5.1",
-    "expect": "0.0.2",
-    "expect.js": "~0.2.0"
+    "expect.js": "~0.2.0",
+    "phantomjs": "~1.9.1-0",
+    "zombie": "~2.0.0-alpha19"
   }
 }
