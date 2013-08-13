@@ -72,6 +72,7 @@ $('#recordMissionButton').click(function(e){
 		game.missionComplete( leader, chosenPlayers, failsPlayed );
 		view.updateGameView( game );
 	}else{
+		var len = game.rules.rounds[missionNumber];
 		var missionNo = missionNumber + 1;
 		var failOverflow = (failsPlayed > len);
 		var newHtml = '';
