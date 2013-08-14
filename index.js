@@ -39,16 +39,21 @@ $('.failCardButtons button').on('click', function(e){
 $('#recordMissionButton').click(function(e){
 
 	e.preventDefault();
-	if(players.length < 5) return;
+	if(players.length < 5 || players.length > 10) return;
 
 	console.log("Record mission pressed.");
 	if(!gameStarted){
 		gameStarted = true;
-		game = gameEstimator(players);
+		var game = gameEstimator(players);
 		$('#newPlayerDiv').hide(0);
 		$('#playerListDiv').removeClass('span9').addClass('span12');
+		recordMissionOnExistantGame();
+	}else{
+		recordMissionOnExistantGame();
 	}
+});
 
+function recordMissionOnExistantGame(){
 	var chosenPlayers = [];
 	playerEls = $('.chosenCheckbox:checked');
 	// console.log("Chose players1: "+playerEls.length);
@@ -99,7 +104,7 @@ $('#recordMissionButton').click(function(e){
 		$('#myModal').modal();
 		$('div.failCardButtons[val="'+failsPlayed+'"]').addClass('active');
 	}
-});
+}
 
 $('#playerName').click(function(e){
 	$('#playerName').val('');

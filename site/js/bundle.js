@@ -40,16 +40,21 @@ $('.failCardButtons button').on('click', function(e){
 $('#recordMissionButton').click(function(e){
 
 	e.preventDefault();
-	if(players.length < 5) return;
+	if(players.length < 5 || players.length > 10) return;
 
 	console.log("Record mission pressed.");
 	if(!gameStarted){
 		gameStarted = true;
-		game = gameEstimator(players);
+		var game = gameEstimator(players);
 		$('#newPlayerDiv').hide(0);
 		$('#playerListDiv').removeClass('span9').addClass('span12');
+		recordMissionOnExistantGame();
+	}else{
+		recordMissionOnExistantGame();
 	}
+});
 
+function recordMissionOnExistantGame(){
 	var chosenPlayers = [];
 	playerEls = $('.chosenCheckbox:checked');
 	// console.log("Chose players1: "+playerEls.length);
@@ -100,7 +105,7 @@ $('#recordMissionButton').click(function(e){
 		$('#myModal').modal();
 		$('div.failCardButtons[val="'+failsPlayed+'"]').addClass('active');
 	}
-});
+}
 
 $('#playerName').click(function(e){
 	$('#playerName').val('');
@@ -134,14 +139,13 @@ $('#undoMissionButton').click(function(e){
 $('#trustHeading').tooltip({
 	html:"Degree you trust a player, between 0 and 1.  Default is 0.  Set yourself to 1."
 })
-},{"./lib/resistanceEstimator":2,"./lib/view":4,"underscore":5}],2:[function(require,module,exports){
+},{"./lib/resistanceEstimator":2,"./lib/view":4,"underscore":6}],2:[function(require,module,exports){
 var players = [];
 var spyPermutations = require('./spyPermutations');
 var _ = require('underscore');
 
-module.exports = function newGame (players){
-	var game = new Game(players);
-	return game;
+module.exports = function newGame (players, cb){
+	var game = new Game(players, cb);
 }
 
 function Player(playerName){
@@ -149,7 +153,7 @@ function Player(playerName){
 	this.trust = 0;
 }
 
-function Game( players ){
+function Game( players, cb ){
 
 	console.log("Making a new game with "+players.length);
 	this.players = players;
@@ -158,7 +162,7 @@ function Game( players ){
 	this.missions = [];
 	this.generateRules = generateRules;
 	this.rules = generateRules( players.length );
-	// console.log("Rules generated: "+JSON.stringify(this.rules));
+	 console.log("Rules generated: "+JSON.stringify(this.rules));
 
 	var spyCount = this.rules.spies;
 	this.spyCount = spyCount;
@@ -167,9 +171,14 @@ function Game( players ){
 		this.players[i].spyOdds = spyCount / len;
 	}
 
-	this.possibilities = spyPermutations.generate(players, this.spyCount);
-	// console.log("New game has "+this.possibilities.length+" possibilities.");
-
+	console.log("Here come the possibilities:");
+	var game = this;
+	spyPermutations.generate(players, this.spyCount, function(possibilities){
+		this.possibilities = possibilities;
+		console.log("New game has "+this.possibilities.length+" possibilities.");
+		cb();
+	});
+	return this;
 }
 
 
@@ -256,11 +265,11 @@ Game.prototype.missionComplete = function( leader, chosenOnes, failCount ){
 };
 
 Game.prototype.isPossible = function( possibility ){
-	console.log("Is possible?");
+	// console.log("Is possible?");
 	var game = this;
 
 	if( this.containsTrustedSpy( possibility ) ){
-		console.log("Trusted player detected.");
+		// console.log("Trusted player detected.");
 		return false;
 	}
 
@@ -277,7 +286,7 @@ Game.prototype.isPossible = function( possibility ){
 			}
 		});
 
-		console.log("Is the proposed "+spiesInMission+" spies less than "+mission.failCount+"?");
+		// console.log("Is the proposed "+spiesInMission+" spies less than "+mission.failCount+"?");
 		if(spiesInMission < mission.failCount){
 			return false;
 		}
@@ -319,9 +328,9 @@ function inArray(o, arr){
 
 Game.prototype.generatePossibilityView = function(){
 	var newHtml = '';
-	console.log("Considering the possibilities... "+this.possibilities.length);
+	// console.log("Considering the possibilities... "+this.possibilities.length);
 	for(var i = 0, len = this.possibilities.length; i < len; i++){
-		console.log("Possibility: "+JSON.stringify(this.possibilities[i]));
+		// console.log("Possibility: "+JSON.stringify(this.possibilities[i]));
 		if(this.possibilities[i].odds > 0){
 			newHtml+='<tr>';
 			for(var x = 0, length = this.possibilities[i].spies.length; x < length; x++){
@@ -332,25 +341,21 @@ Game.prototype.generatePossibilityView = function(){
 	}
 	return newHtml;
 }
-},{"./spyPermutations":3,"underscore":5}],3:[function(require,module,exports){
+},{"./spyPermutations":3,"underscore":6}],3:[function(require,module,exports){
+var Combinatorics = require('js-combinatorics').Combinatorics;
+
 var generate = function generate(playerList, spyCount){
     // console.log("Received "+JSON.stringify(playerList)+" and "+spyCount);
-    var raw = exports.permuteRaw(playerList, spyCount);
-    // console.log("Raw list is: "+JSON.stringify(raw));
-    var reduced = reduceList(raw, spyCount);
-    // console.log("Reduced is: "+JSON.stringify(reduced));
-    return reduced;
+    var cmb = Combinatorics.combination(playerList, spyCount);
+    var raw = [];
+    while(a=cmb.next()) raw.push(a);
+    return reduceList(raw, spyCount);
 }
 exports.generate = generate;
 
 var reduceList = function (rawList, spyCount){
     var result = [];
-    rawList.forEach(function(permutation){
-
-        var spies = [];
-        for(var i = 0; i < spyCount; i++){
-            spies.push(permutation[i]);
-        }
+    rawList.forEach(function(spies){
 
         var permutation = {
             odds: 1,
@@ -361,20 +366,6 @@ var reduceList = function (rawList, spyCount){
     return result;
 }
 exports.reduceList = reduceList;
-
-var permuteRaw = function permuteRaw(playerList, spyCount){
-    var allArrangements = permute(playerList);
-    // console.log("All arrangements: "+JSON.stringify(allArrangements))
-    var realArrangements = [];
-    allArrangements.forEach(function(arrangement){
-        if(!duplicates(arrangement, realArrangements, spyCount)){
-            realArrangements.push(arrangement);
-        }
-    })
-    // console.log("\nReal arrangements: "+JSON.stringify(realArrangements))
-    return realArrangements;
-}
-exports.permuteRaw = permuteRaw;
 
 var permArr = [], usedChars = [], chorePermutations = [], workshopPermutations=[];
 var permute = function permute(input) {
@@ -432,7 +423,7 @@ function inArray(arr, b){
     }
     return false;
 }
-},{}],4:[function(require,module,exports){
+},{"js-combinatorics":5}],4:[function(require,module,exports){
 var _ = require('underscore');
 
 function ViewUpdater (game){
@@ -504,7 +495,297 @@ function inArray(o, arr){
 module.exports = function(){
 	return new ViewUpdater();
 }
-},{"underscore":5}],5:[function(require,module,exports){
+},{"underscore":6}],5:[function(require,module,exports){
+/*
+ * $Id: combinatorics.js,v 0.25 2013/03/11 15:42:14 dankogai Exp dankogai $
+ *
+ *  Licensed under the MIT license.
+ *  http://www.opensource.org/licenses/mit-license.php
+ *
+ *  References:
+ *    http://www.ruby-doc.org/core-2.0/Array.html#method-i-combination
+ *    http://www.ruby-doc.org/core-2.0/Array.html#method-i-permutation
+ *    http://en.wikipedia.org/wiki/Factorial_number_system
+ */
+(function(global) {
+    'use strict';
+    if (global.Combinatorics) return;
+    /* combinatory arithmetics */
+    var P = function(m, n) {
+        var t, p = 1;
+        if (m < n) {
+            t = m;
+            m = n;
+            n = t;
+        }
+        while (n--) p *= m--;
+        return p;
+    };
+    var C = function(m, n) {
+        return P(m, n) / P(n, n);
+    };
+    var factorial = function(n) {
+        return P(n, n);
+    };
+    var factoradic = function(n, d) {
+        var f = 1;
+        if (!d) {
+            for (d = 1; f < n; f *= ++d);
+            if (f > n) f /= d--;
+        } else {
+            f = factorial(d);
+        }
+        var result = [0];
+        for (; d; f /= d--) {
+            result[d] = Math.floor(n / f);
+            n %= f;
+        }
+        return result;
+    };
+    /* common methods */
+    var addProperties = function(dst, src) {
+        Object.keys(src).forEach(function(p) {
+            Object.defineProperty(dst, p, {
+                value: src[p]
+            });
+        });
+    };
+    var hideProperty = function(o, p) {
+        Object.defineProperty(o, p, {
+            writable: true
+        });
+    };
+    var toArray = function(f) {
+        var e, result = [];
+        this.init();
+        while (e = this.next()) result.push(f ? f(e) : e);
+        this.init();
+        return result;
+    };
+    var common = {
+        toArray: toArray,
+        map: toArray,
+        forEach: function(f) {
+            var e;
+            this.init();
+            while (e = this.next()) f(e);
+            this.init();
+        },
+        filter: function(f) {
+            var e, result = [];
+            this.init();
+            while (e = this.next()) if (f(e)) result.push(e);
+            this.init();
+            return result;
+        }
+
+    };
+    /* power set */
+    var power = function(ary, fun) {
+        if (ary.length > 32) throw new RangeError;
+        var size = 1 << ary.length,
+            sizeOf = function() {
+                return size;
+            },
+            that = Object.create(ary.slice(), {
+                length: {
+                    get: sizeOf
+                }
+            });
+        hideProperty(that, 'index');
+        addProperties(that, {
+            valueOf: sizeOf,
+            init: function() {
+                that.index = 0;
+            },
+            nth: function(n) {
+                if (n >= size) return;
+                var i = 0,
+                    result = [];
+                for (; n; n >>>= 1, i++) if (n & 1) result.push(this[i]);
+                return result;
+            },
+            next: function() {
+                return this.nth(this.index++);
+            }
+        });
+        addProperties(that, common);
+        that.init();
+        return (typeof (fun) === 'function') ? that.map(fun) : that;
+    };
+    /* combination */
+    var nextIndex = function(n) {
+        var smallest = n & -n,
+            ripple = n + smallest,
+            new_smallest = ripple & -ripple,
+            ones = ((new_smallest / smallest) >> 1) - 1;
+        return ripple | ones;
+    };
+    var combination = function(ary, nelem, fun) {
+        if (ary.length > 32) throw new RangeError;
+        if (!nelem) nelem = ary.length;
+        if (nelem < 1) throw new RangeError;
+        if (nelem > ary.length) throw new RangeError;
+        var first = (1 << nelem) - 1,
+            size = C(ary.length, nelem),
+            maxIndex = 1 << ary.length,
+            sizeOf = function() {
+                return size;
+            },
+            that = Object.create(ary.slice(), {
+                length: {
+                    get: sizeOf
+                }
+            });
+        hideProperty(that, 'index');
+        addProperties(that, {
+            valueOf: sizeOf,
+            init: function() {
+                this.index = first;
+            },
+            next: function() {
+                if (this.index >= maxIndex) return;
+                var i = 0,
+                    n = this.index,
+                    result = [];
+                for (; n; n >>>= 1, i++) if (n & 1) result.push(this[i]);
+                this.index = nextIndex(this.index);
+                return result;
+            }
+        });
+        addProperties(that, common);
+        that.init();
+        return (typeof (fun) === 'function') ? that.map(fun) : that;
+    };
+    /* permutation */
+    var _permutation = function(ary) {
+        var that = ary.slice(),
+            size = factorial(that.length);
+        that.index = 0;
+        that.next = function() {
+            if (this.index >= size) return;
+            var copy = this.slice(),
+                digits = factoradic(this.index, this.length),
+                result = [],
+                i = this.length - 1;
+            for (; i >= 0; --i) result.push(copy.splice(digits[i], 1)[0]);
+            this.index++;
+            return result;
+        };
+        return that;
+    };
+    // which is really a permutation of combination
+    var permutation = function(ary, nelem, fun) {
+        if (!nelem) nelem = ary.length;
+        if (nelem < 1) throw new RangeError;
+        if (nelem > ary.length) throw new RangeError;
+        var size = P(ary.length, nelem),
+            sizeOf = function() {
+                return size;
+            },
+            that = Object.create(ary.slice(), {
+                length: {
+                    get: sizeOf
+                }
+            });
+        hideProperty(that, 'cmb');
+        hideProperty(that, 'per');
+        addProperties(that, {
+            valueOf: function() {
+                return size;
+            },
+            init: function() {
+                this.cmb = combination(ary, nelem);
+                this.per = _permutation(this.cmb.next());
+            },
+            next: function() {
+                var result = this.per.next();
+                if (!result) {
+                    var cmb = this.cmb.next();
+                    if (!cmb) return;
+                    this.per = _permutation(cmb);
+                    return this.next();
+                }
+                return result;
+            }
+        });
+        addProperties(that, common);
+        that.init();
+        return (typeof (fun) === 'function') ? that.map(fun) : that;
+    };
+    /* Cartesian Product */
+    var arraySlice = Array.prototype.slice;
+    var cartesianProduct = function() {
+        if (!arguments.length) throw new RangeError;
+        var args = arraySlice.call(arguments),
+            size = args.reduce(function(p, a) {
+                return p * a.length;
+            }, 1),
+            sizeOf = function() {
+                return size;
+            },
+            dim = args.length,
+            that = Object.create(args, {
+                length: {
+                    get: sizeOf
+                }
+            });
+        if (!size) throw new RangeError;
+        hideProperty(that, 'index');
+        addProperties(that, {
+            valueOf: sizeOf,
+            dim: dim,
+            init: function() {
+                this.index = 0;
+            },
+            get: function() {
+                if (arguments.length !== this.length) return;
+                var result = [],
+                    d = 0;
+                for (; d < dim; d++) {
+                    var i = arguments[d];
+                    if (i >= this[d].length) return;
+                    result.push(this[d][i]);
+                }
+                return result;
+            },
+            nth: function(n) {
+                var result = [],
+                    d = 0;
+                for (; d < dim; d++) {
+                    var l = this[d].length;
+                    var i = n % l;
+                    result.push(this[d][i]);
+                    n -= i;
+                    n /= l;
+                }
+                return result;
+            },
+            next: function() {
+                if (this.index >= size) return;
+                var result = this.nth(this.index);
+                this.index++;
+                return result;
+            }
+        });
+        addProperties(that, common);
+        that.init();
+        return that;
+    };
+    /* export */
+    addProperties(global.Combinatorics = Object.create(null), {
+        C: C,
+        P: P,
+        factorial: factorial,
+        factoradic: factoradic,
+        cartesianProduct: cartesianProduct,
+        combination: combination,
+        permutation: permutation,
+        power: power
+    });
+})(this);
+
+},{}],6:[function(require,module,exports){
 //     Underscore.js 1.5.1
 //     http://underscorejs.org
 //     (c) 2009-2013 Jeremy Ashkenas, DocumentCloud and Investigative Reporters & Editors

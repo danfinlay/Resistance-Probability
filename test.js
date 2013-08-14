@@ -56,6 +56,19 @@ describe('resistance estimator', function(){
     expect(game.players[0].spyOdds).to.be(0);
   })
 
+  it('should handle a 10 player game', function(){
+    var samplePlayers = [{name:"Dan", trust:true}, {name:"Alexa"}, {name:"Benny D"}, {name:"Harrold"}, {name:"Kumar"},{name:"Boo"}, {name:"Hoo"}, {name:"Hammy D"}, {name:"Spacerace"}, {name:"Fancyface"}];
+    var sampleTeam = [{name:"Dan"}, {name:"Alexa"}, {name:"Benny D"}];
+    var sampleFailCount = 1;
+    var game = gameEstimator(samplePlayers);
+
+    game.missionComplete("Dan", sampleTeam, sampleFailCount);
+    expect(game.possibilities).to.be.ok();
+
+
+
+  });
+
 });
 
 // describe('Awful spies', function(){
