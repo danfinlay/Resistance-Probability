@@ -45,10 +45,10 @@ $('#recordMissionButton').click(function(e){
 	console.log("Record mission pressed.");
 	if(!gameStarted){
 		gameStarted = true;
-		var game = gameEstimator(players);
+		game = gameEstimator(players);
 		$('#newPlayerDiv').hide(0);
 		$('#playerListDiv').removeClass('span9').addClass('span12');
-		recordMissionOnExistantGame();
+		recordMissionOnExistantGame()
 	}else{
 		recordMissionOnExistantGame();
 	}
@@ -146,6 +146,7 @@ var _ = require('underscore');
 
 module.exports = function newGame (players, cb){
 	var game = new Game(players, cb);
+	return game;
 }
 
 function Player(playerName){
@@ -173,11 +174,7 @@ function Game( players, cb ){
 
 	console.log("Here come the possibilities:");
 	var game = this;
-	spyPermutations.generate(players, this.spyCount, function(possibilities){
-		this.possibilities = possibilities;
-		console.log("New game has "+this.possibilities.length+" possibilities.");
-		cb();
-	});
+	this.possibilities = spyPermutations.generate(players, this.spyCount);
 	return this;
 }
 

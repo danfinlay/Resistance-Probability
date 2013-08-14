@@ -44,10 +44,10 @@ $('#recordMissionButton').click(function(e){
 	console.log("Record mission pressed.");
 	if(!gameStarted){
 		gameStarted = true;
-		var game = gameEstimator(players);
+		game = gameEstimator(players);
 		$('#newPlayerDiv').hide(0);
 		$('#playerListDiv').removeClass('span9').addClass('span12');
-		recordMissionOnExistantGame();
+		recordMissionOnExistantGame()
 	}else{
 		recordMissionOnExistantGame();
 	}
