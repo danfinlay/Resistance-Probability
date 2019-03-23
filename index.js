@@ -10,10 +10,10 @@ $('#newGameButton').click(function(e){
 	e.preventDefault();
 	gameStarted = false;
 	game = null;
-	players = [];
 	$('#newPlayerDiv').show(0);
+	$('#deleteHeading').show(0);	
 	$('#playerListDiv').removeClass('span12').addClass('span9');
-	view.renderNames(["None"]);
+	view.renderNames(players);
 });
 
 $('#newPlayerButton').click(function(e){
@@ -27,6 +27,12 @@ $('#newPlayerButton').click(function(e){
 	players.push(newPlayer);
 	view.renderNames(players);
 	$('#playerName').val('');
+});
+
+$('#playerTable').on('click', '.deletePlayerButton', function(e){
+	var index = $(this).closest('.playerRow').data('player-index');
+	players.splice(index, 1);
+	view.renderNames(players);
 });
 
 $('.failCardButtons button').on('click', function(e){
@@ -46,6 +52,7 @@ $('#recordMissionButton').click(function(e){
 		gameStarted = true;
 		game = gameEstimator(players);
 		$('#newPlayerDiv').hide(0);
+		$('#deleteHeading').hide(0);	
 		$('#playerListDiv').removeClass('span9').addClass('span12');
 		recordMissionOnExistantGame()
 	}else{
