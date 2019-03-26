@@ -1,4 +1,4 @@
-;(function e(t,n,r){function s(o,u){if(!n[o]){if(!t[o]){var a=typeof require=="function"&&require;if(!u&&a)return a(o,!0);if(i)return i(o,!0);throw new Error("Cannot find module '"+o+"'")}var f=n[o]={exports:{}};t[o][0].call(f.exports,function(e){var n=t[o][1][e];return s(n?n:e)},f,f.exports,e,t,n,r)}return n[o].exports}var i=typeof require=="function"&&require;for(var o=0;o<r.length;o++)s(r[o]);return s})({1:[function(require,module,exports){
+(function(){function r(e,n,t){function o(i,f){if(!n[i]){if(!e[i]){var c="function"==typeof require&&require;if(!f&&c)return c(i,!0);if(u)return u(i,!0);var a=new Error("Cannot find module '"+i+"'");throw a.code="MODULE_NOT_FOUND",a}var p=n[i]={exports:{}};e[i][0].call(p.exports,function(r){var n=e[i][1][r];return o(n||r)},p,p.exports,r,e,n,t)}return n[i].exports}for(var u="function"==typeof require&&require,i=0;i<t.length;i++)o(t[i]);return o}return r})()({1:[function(require,module,exports){
 var gameEstimator = require('./lib/resistanceEstimator');
 var view = require('./lib/view')();
 var game;
@@ -11,10 +11,10 @@ $('#newGameButton').click(function(e){
 	e.preventDefault();
 	gameStarted = false;
 	game = null;
-	players = [];
 	$('#newPlayerDiv').show(0);
+	$('#deleteHeading').show(0);	
 	$('#playerListDiv').removeClass('span12').addClass('span9');
-	view.renderNames(["None"]);
+	view.renderNames(players);
 });
 
 $('#newPlayerButton').click(function(e){
@@ -28,6 +28,12 @@ $('#newPlayerButton').click(function(e){
 	players.push(newPlayer);
 	view.renderNames(players);
 	$('#playerName').val('');
+});
+
+$('#playerTable').on('click', '.deletePlayerButton', function(e){
+	var index = $(this).closest('.playerRow').data('player-index');
+	players.splice(index, 1);
+	view.renderNames(players);
 });
 
 $('.failCardButtons button').on('click', function(e){
@@ -47,6 +53,7 @@ $('#recordMissionButton').click(function(e){
 		gameStarted = true;
 		game = gameEstimator(players);
 		$('#newPlayerDiv').hide(0);
+		$('#deleteHeading').hide(0);	
 		$('#playerListDiv').removeClass('span9').addClass('span12');
 		recordMissionOnExistantGame()
 	}else{
@@ -139,6 +146,7 @@ $('#undoMissionButton').click(function(e){
 $('#trustHeading').tooltip({
 	html:"Degree you trust a player, between 0 and 1.  Default is 0.  Set yourself to 1."
 })
+
 },{"./lib/resistanceEstimator":2,"./lib/view":4,"underscore":6}],2:[function(require,module,exports){
 var players = [];
 var spyPermutations = require('./spyPermutations');
@@ -429,12 +437,18 @@ function ViewUpdater (game){
 }
 
 ViewUpdater.prototype.renderNames = function(players){
+	if(!players || !players.length){
+		players = ["None"];
+	}
+	
 	var newHtml = '';
-	players.forEach(function(player){
-		newHtml+= '<tr class="playerRow" player = "'+escape(player.name)+'"><td>'+player.name+'</td><td>0</td><td>N/A</td><td>';
+	players.forEach(function(player, index){
+		newHtml+='<tr class="playerRow" player = "'+escape(player.name)+'" data-player-index="'+index+'">';
+		newHtml+='<td>'+player.name+'</td><td>0</td><td>N/A</td><td>';
 		newHtml+='<input type="radio" name="leaderRadio" value="'+escape(player.name);
 		newHtml+='"></td><td><input type="checkbox" class="chosenCheckbox" player="'+escape(player.name)+'"></td>';
-		newHtml+='<td><input type="checkbox" class="trustBox" player="'+escape(player.name)+'"></td></tr>';
+		newHtml+='<td><input type="checkbox" class="trustBox" player="'+escape(player.name)+'"></td>';
+		newHtml+='<td><span class="btn btn-danger deletePlayerButton">X</span></td></tr>';
 	})
 	$('#playerTable').html(newHtml);
 }
@@ -492,6 +506,7 @@ function inArray(o, arr){
 module.exports = function(){
 	return new ViewUpdater();
 }
+
 },{"underscore":6}],5:[function(require,module,exports){
 /*
  * $Id: combinatorics.js,v 0.25 2013/03/11 15:42:14 dankogai Exp dankogai $
@@ -783,7 +798,7 @@ module.exports = function(){
 })(this);
 
 },{}],6:[function(require,module,exports){
-//     Underscore.js 1.5.1
+//     Underscore.js 1.5.2
 //     http://underscorejs.org
 //     (c) 2009-2013 Jeremy Ashkenas, DocumentCloud and Investigative Reporters & Editors
 //     Underscore may be freely distributed under the MIT license.
@@ -793,7 +808,7 @@ module.exports = function(){
   // Baseline setup
   // --------------
 
-  // Establish the root object, `window` in the browser, or `global` on the server.
+  // Establish the root object, `window` in the browser, or `exports` on the server.
   var root = this;
 
   // Save the previous value of the `_` variable.
@@ -850,7 +865,7 @@ module.exports = function(){
   }
 
   // Current version.
-  _.VERSION = '1.5.1';
+  _.VERSION = '1.5.2';
 
   // Collection Functions
   // --------------------
@@ -863,14 +878,13 @@ module.exports = function(){
     if (nativeForEach && obj.forEach === nativeForEach) {
       obj.forEach(iterator, context);
     } else if (obj.length === +obj.length) {
-      for (var i = 0, l = obj.length; i < l; i++) {
+      for (var i = 0, length = obj.length; i < length; i++) {
         if (iterator.call(context, obj[i], i, obj) === breaker) return;
       }
     } else {
-      for (var key in obj) {
-        if (_.has(obj, key)) {
-          if (iterator.call(context, obj[key], key, obj) === breaker) return;
-        }
+      var keys = _.keys(obj);
+      for (var i = 0, length = keys.length; i < length; i++) {
+        if (iterator.call(context, obj[keys[i]], keys[i], obj) === breaker) return;
       }
     }
   };
@@ -1069,7 +1083,8 @@ module.exports = function(){
     return result.value;
   };
 
-  // Shuffle an array.
+  // Shuffle an array, using the modern version of the 
+  // [Fisher-Yates shuffle](http://en.wikipedia.org/wiki/Fisher–Yates_shuffle).
   _.shuffle = function(obj) {
     var rand;
     var index = 0;
@@ -1082,6 +1097,16 @@ module.exports = function(){
     return shuffled;
   };
 
+  // Sample **n** random values from an array.
+  // If **n** is not specified, returns a single random element from the array.
+  // The internal `guard` argument allows it to work with `map`.
+  _.sample = function(obj, n, guard) {
+    if (arguments.length < 2 || guard) {
+      return obj[_.random(obj.length - 1)];
+    }
+    return _.shuffle(obj).slice(0, Math.max(0, n));
+  };
+
   // An internal function to generate lookup iterators.
   var lookupIterator = function(value) {
     return _.isFunction(value) ? value : function(obj){ return obj[value]; };
@@ -1092,9 +1117,9 @@ module.exports = function(){
     var iterator = lookupIterator(value);
     return _.pluck(_.map(obj, function(value, index, list) {
       return {
-        value : value,
-        index : index,
-        criteria : iterator.call(context, value, index, list)
+        value: value,
+        index: index,
+        criteria: iterator.call(context, value, index, list)
       };
     }).sort(function(left, right) {
       var a = left.criteria;
@@ -1103,38 +1128,41 @@ module.exports = function(){
         if (a > b || a === void 0) return 1;
         if (a < b || b === void 0) return -1;
       }
-      return left.index < right.index ? -1 : 1;
+      return left.index - right.index;
     }), 'value');
   };
 
   // An internal function used for aggregate "group by" operations.
-  var group = function(obj, value, context, behavior) {
-    var result = {};
-    var iterator = lookupIterator(value == null ? _.identity : value);
-    each(obj, function(value, index) {
-      var key = iterator.call(context, value, index, obj);
-      behavior(result, key, value);
-    });
-    return result;
+  var group = function(behavior) {
+    return function(obj, value, context) {
+      var result = {};
+      var iterator = value == null ? _.identity : lookupIterator(value);
+      each(obj, function(value, index) {
+        var key = iterator.call(context, value, index, obj);
+        behavior(result, key, value);
+      });
+      return result;
+    };
   };
 
   // Groups the object's values by a criterion. Pass either a string attribute
   // to group by, or a function that returns the criterion.
-  _.groupBy = function(obj, value, context) {
-    return group(obj, value, context, function(result, key, value) {
-      (_.has(result, key) ? result[key] : (result[key] = [])).push(value);
-    });
-  };
+  _.groupBy = group(function(result, key, value) {
+    (_.has(result, key) ? result[key] : (result[key] = [])).push(value);
+  });
+
+  // Indexes the object's values by a criterion, similar to `groupBy`, but for
+  // when you know that your index values will be unique.
+  _.indexBy = group(function(result, key, value) {
+    result[key] = value;
+  });
 
   // Counts instances of an object that group by a certain criterion. Pass
   // either a string attribute to count by, or a function that returns the
   // criterion.
-  _.countBy = function(obj, value, context) {
-    return group(obj, value, context, function(result, key) {
-      if (!_.has(result, key)) result[key] = 0;
-      result[key]++;
-    });
-  };
+  _.countBy = group(function(result, key) {
+    _.has(result, key) ? result[key]++ : result[key] = 1;
+  });
 
   // Use a comparator function to figure out the smallest index at which
   // an object should be inserted so as to maintain order. Uses binary search.
@@ -1171,7 +1199,7 @@ module.exports = function(){
   // allows it to work with `_.map`.
   _.first = _.head = _.take = function(array, n, guard) {
     if (array == null) return void 0;
-    return (n != null) && !guard ? slice.call(array, 0, n) : array[0];
+    return (n == null) || guard ? array[0] : slice.call(array, 0, n);
   };
 
   // Returns everything but the last entry of the array. Especially useful on
@@ -1186,10 +1214,10 @@ module.exports = function(){
   // values in the array. The **guard** check allows it to work with `_.map`.
   _.last = function(array, n, guard) {
     if (array == null) return void 0;
-    if ((n != null) && !guard) {
-      return slice.call(array, Math.max(array.length - n, 0));
-    } else {
+    if ((n == null) || guard) {
       return array[array.length - 1];
+    } else {
+      return slice.call(array, Math.max(array.length - n, 0));
     }
   };
 
@@ -1221,7 +1249,7 @@ module.exports = function(){
     return output;
   };
 
-  // Return a completely flattened version of an array.
+  // Flatten out an array, either recursively (by default), or just one level.
   _.flatten = function(array, shallow) {
     return flatten(array, shallow, []);
   };
@@ -1293,7 +1321,7 @@ module.exports = function(){
   _.object = function(list, values) {
     if (list == null) return {};
     var result = {};
-    for (var i = 0, l = list.length; i < l; i++) {
+    for (var i = 0, length = list.length; i < length; i++) {
       if (values) {
         result[list[i]] = values[i];
       } else {
@@ -1311,17 +1339,17 @@ module.exports = function(){
   // for **isSorted** to use binary search.
   _.indexOf = function(array, item, isSorted) {
     if (array == null) return -1;
-    var i = 0, l = array.length;
+    var i = 0, length = array.length;
     if (isSorted) {
       if (typeof isSorted == 'number') {
-        i = (isSorted < 0 ? Math.max(0, l + isSorted) : isSorted);
+        i = (isSorted < 0 ? Math.max(0, length + isSorted) : isSorted);
       } else {
         i = _.sortedIndex(array, item);
         return array[i] === item ? i : -1;
       }
     }
     if (nativeIndexOf && array.indexOf === nativeIndexOf) return array.indexOf(item, isSorted);
-    for (; i < l; i++) if (array[i] === item) return i;
+    for (; i < length; i++) if (array[i] === item) return i;
     return -1;
   };
 
@@ -1347,11 +1375,11 @@ module.exports = function(){
     }
     step = arguments[2] || 1;
 
-    var len = Math.max(Math.ceil((stop - start) / step), 0);
+    var length = Math.max(Math.ceil((stop - start) / step), 0);
     var idx = 0;
-    var range = new Array(len);
+    var range = new Array(length);
 
-    while(idx < len) {
+    while(idx < length) {
       range[idx++] = start;
       start += step;
     }
@@ -1463,17 +1491,24 @@ module.exports = function(){
   // N milliseconds. If `immediate` is passed, trigger the function on the
   // leading edge, instead of the trailing.
   _.debounce = function(func, wait, immediate) {
-    var result;
-    var timeout = null;
+    var timeout, args, context, timestamp, result;
     return function() {
-      var context = this, args = arguments;
+      context = this;
+      args = arguments;
+      timestamp = new Date();
       var later = function() {
-        timeout = null;
-        if (!immediate) result = func.apply(context, args);
+        var last = (new Date()) - timestamp;
+        if (last < wait) {
+          timeout = setTimeout(later, wait - last);
+        } else {
+          timeout = null;
+          if (!immediate) result = func.apply(context, args);
+        }
       };
       var callNow = immediate && !timeout;
-      clearTimeout(timeout);
-      timeout = setTimeout(later, wait);
+      if (!timeout) {
+        timeout = setTimeout(later, wait);
+      }
       if (callNow) result = func.apply(context, args);
       return result;
     };
@@ -1539,22 +1574,33 @@ module.exports = function(){
 
   // Retrieve the values of an object's properties.
   _.values = function(obj) {
-    var values = [];
-    for (var key in obj) if (_.has(obj, key)) values.push(obj[key]);
+    var keys = _.keys(obj);
+    var length = keys.length;
+    var values = new Array(length);
+    for (var i = 0; i < length; i++) {
+      values[i] = obj[keys[i]];
+    }
     return values;
   };
 
   // Convert an object into a list of `[key, value]` pairs.
   _.pairs = function(obj) {
-    var pairs = [];
-    for (var key in obj) if (_.has(obj, key)) pairs.push([key, obj[key]]);
+    var keys = _.keys(obj);
+    var length = keys.length;
+    var pairs = new Array(length);
+    for (var i = 0; i < length; i++) {
+      pairs[i] = [keys[i], obj[keys[i]]];
+    }
     return pairs;
   };
 
   // Invert the keys and values of an object. The values must be serializable.
   _.invert = function(obj) {
     var result = {};
-    for (var key in obj) if (_.has(obj, key)) result[obj[key]] = key;
+    var keys = _.keys(obj);
+    for (var i = 0, length = keys.length; i < length; i++) {
+      result[obj[keys[i]]] = keys[i];
+    }
     return result;
   };
 
@@ -1838,8 +1884,7 @@ module.exports = function(){
       '<': '&lt;',
       '>': '&gt;',
       '"': '&quot;',
-      "'": '&#x27;',
-      '/': '&#x2F;'
+      "'": '&#x27;'
     }
   };
   entityMap.unescape = _.invert(entityMap.escape);
@@ -1870,7 +1915,7 @@ module.exports = function(){
 
   // Add your own custom functions to the Underscore object.
   _.mixin = function(obj) {
-    each(_.functions(obj), function(name){
+    each(_.functions(obj), function(name) {
       var func = _[name] = obj[name];
       _.prototype[name] = function() {
         var args = [this._wrapped];
@@ -2030,5 +2075,4 @@ module.exports = function(){
 
 }).call(this);
 
-},{}]},{},[1])
-;
+},{}]},{},[1]);
